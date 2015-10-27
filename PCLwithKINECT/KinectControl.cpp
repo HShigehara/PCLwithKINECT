@@ -120,9 +120,7 @@ void KinectControl::setDepthImage(cv::Mat& image)
 		points->height = height;
 
 
-		//pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered(new pcl::PointCloud<pcl::PointXYZ>); //フィルター用追加分
-		//cloud_filtered->width = width;
-		//cloud_filtered->height = height;
+
 
 
 
@@ -158,7 +156,7 @@ void KinectControl::setDepthImage(cv::Mat& image)
 			//pcl::PointXYZRGBA point;
 			pcl::PointXYZ point;
 			point.x = real.x;
-			point.y = -real.y;
+			point.y = /*-*/real.y;
 			point.z = real.z;
 
 			// テクスチャ
@@ -194,23 +192,26 @@ void KinectControl::setDepthImage(cv::Mat& image)
 		//mls.process(mls_points); //出力
 		//cmls->showCloud(mls_points);
 
-		//フィルタリングオブジェクトの生成
-		//pcl::StatisticalOutlierRemoval<pcl::PointXYZ> sor; //インスタンスの生成
-		//sor.setInputCloud(cloud); //フィルタリング対象の点群を入力
-		//sor.setMeanK(50); //フィルタリングの程度(?)
-		//sor.setStddevMulThresh(1.0);
-		//sor.filter(*cloud_filtered);
+
 
 		//ボクセルグリッドフィルタによるダウンサンプリング
 		pcl::PointCloud<pcl::PointXYZ>::Ptr filtered(new pcl::PointCloud<pcl::PointXYZ>);
 		pcl::VoxelGrid<pcl::PointXYZ> sor/*(new pcl::PointCloud<pcl::PointXYZ>)*/;
 		sor.setInputCloud(cloud);
-		sor.setLeafSize(0.01f, 0.01f, 0.01f);
+		sor.setLeafSize(0.001f, 0.001f, 0.001f);
 		sor.filter(*filtered);
 		cloud = filtered;
-		//pcl::PointCloud<pcl::PointXYZ>::Ptr src = filtered;
 
-
+		//フィルタリングオブジェクトの生成
+		pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered(new pcl::PointCloud<pcl::PointXYZ>); //フィルター用追加分
+		//cloud_filtered->width = width;
+		//cloud_filtered->height = height;
+		pcl::StatisticalOutlierRemoval<pcl::PointXYZ> fl; //インスタンスの生成
+		fl.setInputCloud(cloud); //フィルタリング対象の点群を入力
+		fl.setMeanK(50); //フィルタリングの程度(?)
+		fl.setStddevMulThresh(1.0);
+		fl.filter(*cloud_filtered);
+		cloud = cloud_filtered;
 		//pcl::visualization::CloudViewer sample("SAMPLE");
 		//sample.showCloud(src);
 
