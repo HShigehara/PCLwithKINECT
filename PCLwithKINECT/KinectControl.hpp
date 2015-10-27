@@ -38,4 +38,7 @@ private:
 	//スムージングの結果を表示
 	//pcl::PointCloud<pcl::PointXYZ>::Ptr mls_points; //出力する点群の保存場所
 	//pcl::visualization::CloudViewer *cmls;
+
+	//pcl::PointCloud<pcl::PointXYZ>::Ptr sample;
+	//pcl::visualization::CloudViewer *csample;
 };

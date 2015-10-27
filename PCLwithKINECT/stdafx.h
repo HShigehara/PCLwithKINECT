@@ -25,10 +25,15 @@
 
 //PCL関係
 #include <pcl\point_types.h>
+#include <pcl\point_cloud.h>
+#include <pcl\io\io.h>
+#include <pcl\io\pcd_io.h> //.pcd出力用
 #include <pcl\visualization\cloud_viewer.h>
 #include <pcl\filters\statistical_outlier_removal.h> //外れ値フィルター用
 #include <pcl\kdtree\kdtree_flann.h> //スムージング用
 #include <pcl\surface\mls.h> //スムージング用
+#include <pcl\filters\voxel_grid.h> //ダウンサンプリング用
+#include <pcl\PCLPointField.h>
 
 //Kinect関係
 #define ERROR_CHECK(ret)                                            \
