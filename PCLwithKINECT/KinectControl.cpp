@@ -36,7 +36,7 @@ void KinectControl::initialize()
 	// PointCloudビューワを初期化
 	viewer = new pcl::visualization::CloudViewer("Kinect Point Cloud");
 	//viewer_filtered = new pcl::visualization::CloudViewer("Kinect Point Cloud(filtered)");
-	//cmls = new pcl::visualization::CloudViewer("Moving Least Square"); //スムージング
+	//smooth = new pcl::visualization::CloudViewer("Moving Least Square"); //スムージング
 	//csample = new pcl::visualization::CloudViewer("SAMPLE");
 }
 
@@ -77,7 +77,7 @@ void KinectControl::run()
 		// ポイントクラウドを表示する
 		viewer->showCloud(cloud);
 		//viewer_filtered->showCloud(cf);
-		//cmls->showCloud(mls_points);
+		//smooth->showCloud(mlsp);
 		//csample->showCloud(sample);
 
 		// 終了のためのキー入力チェック兼、表示のためのウェイト
@@ -114,15 +114,10 @@ void KinectControl::setDepthImage(cv::Mat& image)
 {
 	try {
 		// ポイントクラウド準備
-		//pcl::PointCloud<pcl::PointXYZRGBA>::Ptr points(new pcl::PointCloud<pcl::PointXYZRGBA>); //カラーまで利用したければこちらを使う
-		pcl::PointCloud<pcl::PointXYZ>::Ptr points(new pcl::PointCloud<pcl::PointXYZ>); //白黒の点群を扱う場合はこちら
+		//pcl::PointCloud<pcl::PointXYZRGBA>::Ptr points(new pcl::PointCloud<pcl::PointXYZRGBA>()); //カラーまで利用したければこちらを使う
+		pcl::PointCloud<pcl::PointXYZ>::Ptr points(new pcl::PointCloud<pcl::PointXYZ>()); //白黒の点群を扱う場合はこちら
 		points->width = width;
 		points->height = height;
-
-
-
-
-
 
 
 		// 距離画像準備
@@ -156,7 +151,7 @@ void KinectControl::setDepthImage(cv::Mat& image)
 			//pcl::PointXYZRGBA point;
 			pcl::PointXYZ point;
 			point.x = real.x;
-			point.y = /*-*/real.y;
+			point.y = -real.y;
 			point.z = real.z;
 
 			// テクスチャ
@@ -177,12 +172,32 @@ void KinectControl::setDepthImage(cv::Mat& image)
 		//pcl::visualization::CloudViewer read_pcd("read point cloud");
 		//read_pcd.showCloud(read);
 
-		//pcl::PointCloud<pcl::PointXYZ>::Ptr 
-		//スムージング
+
+		//フィルタリングオブジェクトの生成
+		pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered(new pcl::PointCloud<pcl::PointXYZ>()); //フィルター用追加分
+		pcl::StatisticalOutlierRemoval<pcl::PointXYZ> fl; //インスタンスの生成
+		fl.setInputCloud(cloud); //フィルタリング対象の点群を入力
+		fl.setMeanK(10); //フィルタリングの程度(?)
+		fl.setStddevMulThresh(1.0);
+		fl.filter(*cloud_filtered);
+		cloud = cloud_filtered;
+
+		//ボクセルグリッドフィルタによるダウンサンプリング
+		//pcl::PointCloud<pcl::PointXYZ>::Ptr filtered(new pcl::PointCloud<pcl::PointXYZ>);
+		//pcl::VoxelGrid<pcl::PointXYZ> sor/*(new pcl::PointCloud<pcl::PointXYZ>)*/;
+		//sor.setInputCloud(cloud);
+		//sor.setLeafSize(0.003f, 0.003f, 0.003f);
+		//sor.filter(*filtered);
+		//cloud = filtered;
+
+
 		//スムージング処理
-		//pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>); //KdTreeの作成
+		//pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>()); //KdTreeの作成
 		//pcl::PointCloud<pcl::PointNormal> mls_points; //出力する点群の保存場所
-		//pcl::MovingLeastSquares<pcl::PointXYZ, pcl::PointNormal> mls;
+		////pcl::PointCloud<pcl::PointXYZ>::Ptr mls_points; //出力する点群の保存場所
+		////pcl::MovingLeastSquares<pcl::PointXYZ, pcl::PointNormal> mls;
+		////pcl::MovingLeastSquares<pcl::PointXYZ, pcl::PointCloud<pcl::PointXYZ>::Ptr> mls;
+		//pcl::MovingLeastSquares < pcl::PointCloud<pcl::PointXYZ>::Ptr, pcl::PointCloud<pcl::PointNormal>> mls;
 		//mls.setComputeNormals(true); //法線の計算
 		//各パラメータの設定
 		//mls.setInputCloud(cloud);
@@ -190,30 +205,16 @@ void KinectControl::setDepthImage(cv::Mat& image)
 		//mls.setSearchMethod(tree);
 		//mls.setSearchRadius(0.03);
 		//mls.process(mls_points); //出力
-		//cmls->showCloud(mls_points);
+		//mlsp = mls_points;
 
+		//cloud = mls_points;
 
-
-		//ボクセルグリッドフィルタによるダウンサンプリング
-		pcl::PointCloud<pcl::PointXYZ>::Ptr filtered(new pcl::PointCloud<pcl::PointXYZ>);
-		pcl::VoxelGrid<pcl::PointXYZ> sor/*(new pcl::PointCloud<pcl::PointXYZ>)*/;
-		sor.setInputCloud(cloud);
-		sor.setLeafSize(0.001f, 0.001f, 0.001f);
-		sor.filter(*filtered);
-		cloud = filtered;
-
-		//フィルタリングオブジェクトの生成
-		pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered(new pcl::PointCloud<pcl::PointXYZ>); //フィルター用追加分
-		//cloud_filtered->width = width;
-		//cloud_filtered->height = height;
-		pcl::StatisticalOutlierRemoval<pcl::PointXYZ> fl; //インスタンスの生成
-		fl.setInputCloud(cloud); //フィルタリング対象の点群を入力
-		fl.setMeanK(50); //フィルタリングの程度(?)
-		fl.setStddevMulThresh(1.0);
-		fl.filter(*cloud_filtered);
-		cloud = cloud_filtered;
-		//pcl::visualization::CloudViewer sample("SAMPLE");
-		//sample.showCloud(src);
+		//boost::shared_ptr < pcl::visualization::PCLVisualizer> viewer_mls(new pcl::visualization::PCLVisualizer("3D Viewer"));
+		//viewer_mls->setBackgroundColor(0, 0, 0);
+		//viewer_mls->addPointCloud<pcl::PointXYZ> (mls_points, "sample");
+		//viewer_mls->getPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "sample");
+		
+		//cloud = mls_points;
 
 		// フレームデータを解放する
 		ERROR_CHECK(kinect->NuiImageStreamReleaseFrame(depthStreamHandle, &depthFrame));
